@@ -1,6 +1,6 @@
 # Praktikum TKA Modul 3: Ansible
 
-Repository ini berisi hasil pengerjaan Praktikum Modul 3 mata kuliah Teknologi Komputasi Awan (TKA). Praktikum ini berfokus pada penggunaan Ansible (Infrastructure as Code) untuk melakukan otomasi instalasi Docker, Firewall, serta *deployment* aplikasi Backend dan Frontend (menggunakan *container*).
+Repository ini berisi hasil pengerjaan dan Walkthrough Praktikum Modul 3 Teknologi Komputasi Awan (TKA). Praktikum ini berfokus pada penggunaan Ansible (Infrastructure as Code) untuk melakukan otomasi instalasi Docker, Firewall, serta *deployment* aplikasi Backend dan Frontend (menggunakan *container*).
 
 ## Anggota Kelompok B13
 1. Imam Mahmud Dalil Fauzan - 5027241100
@@ -17,7 +17,7 @@ Repository ini berisi hasil pengerjaan Praktikum Modul 3 mata kuliah Teknologi K
 
 ---
 
-## Panduan Pengerjaan & Walkthrough (Langkah demi Langkah)
+## Tahapan Pengerjaan & Walkthrough
 
 ### 0. Persiapan Awal (Install Ansible & Setup Multipass)
 Skenario ini menggunakan **WSL (Ubuntu)** untuk menjalankan Ansible dan **Multipass (di Windows)** untuk simulasi node *Virtual Machine*.
@@ -32,41 +32,81 @@ sudo apt-get install ansible
 
 **B. Buat 2 Node VM Menggunakan Multipass**
 Dikarenakan ada *double layer virtualization*, kami mengunduh *image* Ubuntu secara manual dan membuat 2 node dari *image* tersebut.
+- Link Download image Ubuntu: https://cloud-images.ubuntu.com/noble/current/
+- Pilih file `noble-server-cloudimg-amd64.img` size 601 MB
+- Setelah didownload, rename file itu jadi `ubuntu.img`
+- Buat folder `Images` di C:/
+- Masukan file `ubuntu.img` tadi ke dalam folder `Images`
 ```powershell
-# Buka PowerShell, jalankan:
+# PowerShell A (Backend), jalankan:
 multipass launch file://C:/Images/ubuntu.img --name node-backend --disk 5G --memory 1G
+# PowerShell B (Frontend), jalankan:
 multipass launch file://C:/Images/ubuntu.img --name node-frontend --disk 5G --memory 1G
 ```
 
 **C. Setup SSH Key**
 Agar Ansible bisa berkomunikasi tanpa *password*, kami membuat dan mendaftarkan SSH Key dari WSL ke masing-masing VM.
+- Open 2 Terminal WSL baru (A dan B)
 ```bash
-# Di WSL:
+# Di WSL A:
 ssh-keygen -t rsa
-cat ~/.ssh/id_rsa.pub # Copy hasil teks public key
-
-# Di PowerShell (Masuk ke tiap node):
+enter
+enter
+enter
+cat ~/.ssh/id_rsa.pub # Copy hasil semua teks public key
+```
+```bash
+# Di PowerShell A (node-backend):
 multipass shell node-backend
+echo "PUBLIC_KEY_ANDA" >> ~/.ssh/authorized_keys
+
+# Di PowerShell B (node-frontend):
+multipass shell node-frontend
 echo "PUBLIC_KEY_ANDA" >> ~/.ssh/authorized_keys
 ```
 
-*(Catatan khusus jaringan: Kami juga mengatur Port Proxy dan Firewall Windows menggunakan `netsh` agar WSL bisa berkomunikasi dengan VM Multipass melewati adapter jaringan Windows).*
+*(P.S.: Kami juga mengatur Port Proxy dan Firewall Windows menggunakan `netsh` agar WSL bisa berkomunikasi dengan VM Multipass melewati adapter jaringan Windows). Jika Terminal WSL dan Powershell dalam 1 Laptop, Hiraukan ini :v*
+
+**D. Sambungkan WSL ke Powershell dengan SSH**
+- Buka Powershell, cek IP masing-masing VM
+```bash
+# Di Powershell:
+multipass list
+# Catat IP masing-masing node
+```
+
+- Buka WSL, sambungkan ke masing-masing VM
+```bash
+# Di WSL A (node-backend):
+ssh ubuntu@[IP_NODE_BACKEND]
+
+# Di WSL B (node-frontend):
+ssh ubuntu@[IP_NODE_FRONTEND]
+```
 
 ---
 
 ### 1. Praktikan 1 (Setup Docker & Firewall)
 Tujuan: Mengotomatisasi instalasi Docker dan Firewall UFW.
-
+-  Buka Terminal WSL di VS Code
 1. Lakukan tes *Ping* ke semua node untuk mengecek koneksi:
    ```bash
+   # Di WSL VS Code
    ansible all -m ping -i inventory.yml
    ```
+   
 2. Jalankan playbook instalasi:
    ```bash
+   # Di WSL VS Code
    ansible-playbook -i inventory.yml playbook.yml
    ```
-3. **Pembuktian Manual:** Masuk ke dalam SSH Node dan jalankan *container* *Hello World*:
+
+3. **Pembuktian Manual:** *Test* ke dalam SSH Node dan jalankan *container* *Hello World*:
    ```bash
+   # di WSL A (node-backend), lakukan 2x
+   sudo docker run hello-world
+   
+   # di WSL B (node-frontend), lakukan 2x
    sudo docker run hello-world
    ```
 
