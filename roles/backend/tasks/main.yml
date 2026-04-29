@@ -1,0 +1,50 @@
+---
+- name: Buka port backend di Firewall (UFW)
+  ufw:
+    rule: allow
+    port: "{{ backend_port }}"
+    proto: tcp
+  become: yes
+
+- name: Buat direktori aplikasi di server
+  file:
+    path: /home/ubuntu/app
+    state: directory
+    mode: '0755'
+
+- name: Copy source code backend ke server
+  copy:
+    src: "Resource Soal Modul 3/backend"
+    dest: /home/ubuntu/app/
+    mode: '0755'
+
+- name: Buat file .env dari template
+  template:
+    src: .env.j2
+    dest: /home/ubuntu/app/.env
+
+- name: Buat file docker-compose.yml dari template
+  template:
+    src: docker-compose.yml.j2
+    dest: /home/ubuntu/app/docker-compose.yml
+
+- name: Jalankan Docker Compose untuk Backend & Database
+  command: docker compose up -d --build
+  args:
+    chdir: /home/ubuntu/app
+  become: yes
+
+- name: Tunggu beberapa detik agar service siap
+  pause:
+    seconds: 15
+
+- name: Health check Backend
+  uri:
+    url: "http://localhost:{{ backend_port }}/"
+    method: GET
+    return_content: yes
+  register: health_check
+
+- name: Tampilkan hasil Health Check
+  debug:
+    var: health_check.content

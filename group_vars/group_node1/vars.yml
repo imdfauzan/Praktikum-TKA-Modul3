@@ -1,0 +1,5 @@
+db_name: appdb
+db_username: dbuser
+db_password: dbpassword
+backend_port: 3000
+jwt_secret: supersecretjwt

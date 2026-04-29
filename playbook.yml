@@ -1,0 +1,11 @@
+---
+- name: Setup Docker Engine on All Nodes
+  hosts: all
+  become: yes
+  roles:
+    - docker_engine
+
+- name: Deploy Backend
+  hosts: group_node1
+  roles:
+    - backend

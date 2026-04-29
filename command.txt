@@ -1,0 +1,71 @@
+soal no 1
+
+# di WSL ubuntu, install ansible
+sudo apt-get update
+sudo apt-get install software-properties-common
+sudo add-apt-repository --yes --update ppa:ansible/ansible
+sudo apt-get install ansible
+
+
+# di powershell, buat node pakai multipass
+# download multipass manual: https://cloud-images.ubuntu.com/noble/current/ pilih file `noble-server-cloudimg-amd64.img`
+# rename file itu jadi `ubuntu.img` lalu buat folder Images di C:/
+multipass launch file://C:/Images/ubuntu.img --name node-backend --disk 5G --memory 1G
+# buka terminal powershell baru
+multipass launch file://C:/Images/ubuntu.img --name node-frontend --disk 5G --memory 1G
+
+# kembali ke WSL ubuntu tadi, buat key SSH
+ssh-keygen -t rsa
+enter
+enter
+cat ~/.ssh/id_rsa.pub
+# copy itu semua
+
+# kembali ke 2 powershell tadi
+# run di powershell 1:
+echo "KEY" >> ~/.ssh/authorized_keys
+# run di powershell 2:
+echo "KEY" >> ~/.ssh/authorized_keys
+
+# (OPSIONAL) Buka firewall PC node
+netsh advfirewall firewall add rule name="Allow Ping" protocol=icmpv4:any,any dir=in action=allow
+netsh advfirewall firewall add rule name="Ansible SSH Port" dir=in action=allow protocol=TCP localport=2222,2223
+
+# Buka FIREWALL di PC node
+# Hapus yang lama
+netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=2222
+netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=2223
+# Pasang ulang (Pastikan IP 172.x.x.x sesuai hasil 'multipass list')
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=2222 connectaddress=172.26.158.147 connectport=22
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=2223 connectaddress=172.26.151.154 connectport=22
+
+# cara run multipass yg sdh diinstall tadi
+multipass shell node-backend
+multipass shell node-frontend
+
+# cara akses SSH dari WSL ke node
+FRONTEND: ssh ubuntu@192.168.1.21 -p 2222
+BACKEND: ssh ubuntu@192.168.1.22 -p 2223
+
+# PING ke semua node (dari Ansible WSL) --> output harus hijau
+ansible all -m ping -i inventory.yml
+
+# jalankan playbook - INSTALL DOCKER & firewall
+ansible-playbook -i inventory.yml playbook.yml
+
+# PEMBUKTIAN instalasi docker berhasil
+# SSH ke 2 node itu (di WSL)
+sudo docker run hello-world
+
+
+# SOAL 2
+
+ansible-playbook -i inventory.yml playbook.yml
+
+# pembuktian manual, di SSH node-backend
+curl http://localhost:3000/
+
+# uji endpoint register dan login
+curl -X POST http://localhost:3000/register -H "Content-Type: application/json" -d '{"username": "imam", "password": "111"}'
+# login dengan password salah
+curl -X POST http://localhost:3000/login -H "Content-Type: application/json" -d '{"username": "imam", "password": "aaa"}'

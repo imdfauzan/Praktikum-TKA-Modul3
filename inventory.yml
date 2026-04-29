@@ -1,0 +1,16 @@
+all:
+  children:
+    group_node1:
+      hosts:
+        node-backend:
+          ansible_host: 192.168.1.21 # GANTI DENGAN IP NODE 1 (misal: 10.10.10.2)
+          ansible_port: 2222 
+          ansible_user: ubuntu      # GANTI SESUAI USER VM (misal: ubuntu)
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa # GANTI SESUAI PATH SSH KEY ANDA
+    group_node2:
+      hosts:
+        node-frontend:
+          ansible_host: 192.168.1.21 # GANTI DENGAN IP NODE 2
+          ansible_port: 2223 
+          ansible_user: ubuntu      # GANTI SESUAI USER VM (misal: ubuntu)
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa # GANTI SESUAI PATH SSH KEY ANDA
